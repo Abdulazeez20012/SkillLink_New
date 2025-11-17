@@ -1,6 +1,10 @@
 import { PrismaClient, UserRole } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import dotenv from 'dotenv';
 import { generateAccessCode, generateInviteToken } from '../src/utils/generateCode';
+
+// Load environment variables
+dotenv.config();
 
 const prisma = new PrismaClient();
 

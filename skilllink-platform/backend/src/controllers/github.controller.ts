@@ -1,6 +1,6 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
-import { validateGitHubUrl, getRepoInfo } from '../utils/github';
+import { validateGitHubUrl, getRepoInfo as fetchRepoInfo } from '../utils/github';
 
 export const validateRepo = async (req: AuthRequest, res: Response) => {
   const { url } = req.body;
@@ -14,7 +14,7 @@ export const validateRepo = async (req: AuthRequest, res: Response) => {
     });
   }
 
-  const repoInfo = await getRepoInfo(url);
+  const repoInfo = await fetchRepoInfo(url);
 
   if (!repoInfo) {
     return res.status(404).json({
@@ -39,7 +39,7 @@ export const getRepoInfo = async (req: AuthRequest, res: Response) => {
     });
   }
 
-  const repoInfo = await getRepoInfo(url);
+  const repoInfo = await fetchRepoInfo(url);
 
   if (!repoInfo) {
     return res.status(404).json({

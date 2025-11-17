@@ -1,4 +1,4 @@
-import { Trophy, Medal, Award } from 'lucide-react';
+import { Trophy, Medal } from 'lucide-react';
 
 interface LeaderboardEntry {
   user: {

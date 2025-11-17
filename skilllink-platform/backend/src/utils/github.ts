@@ -26,8 +26,8 @@ export async function getRepoInfo(repoUrl: string): Promise<GitHubRepoInfo | nul
     const match = repoUrl.match(/github\.com\/([\w-]+)\/([\w.-]+)/);
     if (!match) return null;
 
-    const [, owner, repo] = match;
-    const cleanRepo = repo.replace(/\.git$/, '');
+    const [, owner, repoName] = match;
+    const cleanRepo = repoName.replace(/\.git$/, '');
 
     // GitHub API calls
     const [repoData, commitsData, readmeData] = await Promise.allSettled([
@@ -60,19 +60,19 @@ export async function getRepoInfo(repoUrl: string): Promise<GitHubRepoInfo | nul
 
     if (repoData.status === 'rejected') return null;
 
-    const repo = repoData.value.data;
+    const repoDetails = repoData.value.data;
     const commits = commitsData.status === 'fulfilled' ? commitsData.value.data : [];
     const readme = readmeData.status === 'fulfilled' ? readmeData.value.data : '';
 
     const lastCommit = commits[0] || null;
 
     return {
-      name: repo.name,
-      description: repo.description || 'No description',
-      owner: repo.owner.login,
-      stars: repo.stargazers_count,
-      forks: repo.forks_count,
-      language: repo.language || 'Unknown',
+      name: repoDetails.name,
+      description: repoDetails.description || 'No description',
+      owner: repoDetails.owner.login,
+      stars: repoDetails.stargazers_count,
+      forks: repoDetails.forks_count,
+      language: repoDetails.language || 'Unknown',
       lastCommit: lastCommit ? {
         message: lastCommit.commit.message,
         date: lastCommit.commit.author.date,
@@ -82,7 +82,7 @@ export async function getRepoInfo(repoUrl: string): Promise<GitHubRepoInfo | nul
         date: '',
         author: ''
       },
-      readme: readme.substring(0, 1000) // First 1000 chars
+      readme: typeof readme === 'string' ? readme.substring(0, 1000) : '' // First 1000 chars
     };
   } catch (error) {
     console.error('GitHub API error:', error);

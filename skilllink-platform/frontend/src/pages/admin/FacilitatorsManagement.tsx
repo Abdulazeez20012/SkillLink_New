@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, RefreshCw, Key } from 'lucide-react';
+import { Plus, RefreshCw } from 'lucide-react';
 import { useQuery } from '../../hooks/useQuery';
 import { adminService } from '../../services/admin.service';
 import FacilitatorInviteModal from '../../components/admin/FacilitatorInviteModal';

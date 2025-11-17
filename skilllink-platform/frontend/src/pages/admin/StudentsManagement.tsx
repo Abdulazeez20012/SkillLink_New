@@ -1,6 +1,5 @@
 import { useQuery } from '../../hooks/useQuery';
 import { adminService } from '../../services/admin.service';
-import { Users } from 'lucide-react';
 
 export default function StudentsManagement() {
   const { data: students, loading } = useQuery(() => adminService.getStudents());

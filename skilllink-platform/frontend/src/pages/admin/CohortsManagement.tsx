@@ -11,7 +11,7 @@ export default function CohortsManagement() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [selectedCohort, setSelectedCohort] = useState<any>(null);
-  const [copiedLink, setCopiedLink] = useState<string | null>(null);
+  const [, setCopiedLink] = useState<string | null>(null);
 
   const { data: cohorts, loading, refetch } = useQuery(() => cohortService.getCohorts());
 
@@ -24,7 +24,7 @@ export default function CohortsManagement() {
 
   const regenerateLinks = async (cohortId: string) => {
     try {
-      const links = await adminService.regenerateInviteLinks(cohortId);
+      await adminService.regenerateInviteLinks(cohortId);
       toast.success('Invite links regenerated!');
       refetch();
     } catch (error) {
