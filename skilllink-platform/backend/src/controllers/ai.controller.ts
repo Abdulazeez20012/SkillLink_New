@@ -4,7 +4,7 @@ import prisma from '../config/database';
 
 const aiService = new AIService();
 
-export const getStudyRecommendations = async (req: Request, res: Response) => {
+export const getStudyRecommendations = async (req: any, res: Response) => {
   try {
     const userId = req.user!.id;
     const recommendations = await aiService.generateStudyRecommendations(userId);
@@ -16,7 +16,7 @@ export const getStudyRecommendations = async (req: Request, res: Response) => {
   }
 };
 
-export const generateAssignmentFeedback = async (req: Request, res: Response) => {
+export const generateAssignmentFeedback = async (req: any, res: Response) => {
   try {
     const { submissionId } = req.params;
     

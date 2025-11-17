@@ -53,6 +53,7 @@ export default function CodeAnalyzer() {
             <option value="python">Python</option>
             <option value="java">Java</option>
             <option value="cpp">C++</option>
+            <option value="move">move</option>
           </select>
         </div>
 

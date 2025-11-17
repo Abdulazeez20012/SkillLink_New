@@ -102,9 +102,9 @@ Keep feedback concise (max 200 words) and constructive.`;
     const recommendations: string[] = [];
 
     // Analyze grades
-    const recentGrades = submissions.filter(s => s.grade !== null).map(s => s.grade!);
+    const recentGrades = submissions.filter((s: any) => s.grade !== null).map((s: any) => s.grade!);
     if (recentGrades.length > 0) {
-      const avgGrade = recentGrades.reduce((a, b) => a + b, 0) / recentGrades.length;
+      const avgGrade = recentGrades.reduce((a: number, b: number) => a + b, 0) / recentGrades.length;
       
       if (avgGrade < 70) {
         recommendations.push('📚 Consider scheduling study sessions to review challenging concepts');
@@ -116,7 +116,7 @@ Keep feedback concise (max 200 words) and constructive.`;
     }
 
     // Analyze submission patterns
-    const lateSubmissions = submissions.filter(s => 
+    const lateSubmissions = submissions.filter((s: any) => 
       new Date(s.submittedAt) > new Date(s.assignment.dueDate)
     );
     if (lateSubmissions.length > submissions.length * 0.3) {
@@ -125,7 +125,7 @@ Keep feedback concise (max 200 words) and constructive.`;
     }
 
     // Analyze attendance
-    const presentCount = attendance.filter(a => a.status === 'PRESENT').length;
+    const presentCount = attendance.filter((a: any) => a.status === 'PRESENT').length;
     const attendanceRate = attendance.length > 0 ? presentCount / attendance.length : 0;
     
     if (attendanceRate < 0.8) {
