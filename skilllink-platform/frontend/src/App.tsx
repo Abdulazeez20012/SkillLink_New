@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/auth/LoginPage';
 import AdminRegisterPage from './pages/auth/AdminRegisterPage';
 import FacilitatorLoginPage from './pages/auth/FacilitatorLoginPage';
@@ -36,9 +37,11 @@ function AppRoutes() {
 
   return (
     <Routes>
+      <Route path="/" element={!user ? <LandingPage /> : <Navigate to={getDashboardRoute()} />} />
       <Route path="/login" element={!user ? <LoginPage /> : <Navigate to={getDashboardRoute()} />} />
       <Route path="/admin/register" element={!user ? <AdminRegisterPage /> : <Navigate to={getDashboardRoute()} />} />
       <Route path="/facilitator/login" element={!user ? <FacilitatorLoginPage /> : <Navigate to={getDashboardRoute()} />} />
+      <Route path="/register/student" element={!user ? <StudentRegisterPage /> : <Navigate to={getDashboardRoute()} />} />
       <Route path="/student/register/:token" element={!user ? <StudentRegisterPage /> : <Navigate to={getDashboardRoute()} />} />
       
       <Route
@@ -55,8 +58,6 @@ function AppRoutes() {
         path="/student/*"
         element={user?.role === UserRole.STUDENT ? <StudentDashboard /> : <Navigate to="/login" />}
       />
-      
-      <Route path="/" element={<Navigate to={getDashboardRoute()} replace />} />
     </Routes>
   );
 }

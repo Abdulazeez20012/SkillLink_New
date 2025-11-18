@@ -73,7 +73,7 @@ export default function FacilitatorInviteModal({ isOpen, onClose, onSuccess }: F
                 {...register('name', { required: 'Name is required' })}
                 type="text"
                 className="input"
-                placeholder="John Doe"
+                placeholder="your name"
               />
               {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
             </div>

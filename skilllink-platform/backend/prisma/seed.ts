@@ -13,57 +13,87 @@ async function main() {
 
   // Create Super Admin
   const adminPassword = await bcrypt.hash('Admin123!', 12);
-  const admin = await prisma.user.upsert({
-    where: { email: 'admin@skilllink.com' },
-    update: {},
-    create: {
-      email: 'admin@skilllink.com',
-      password: adminPassword,
-      name: 'Super Admin',
-      role: UserRole.ADMIN
-    }
+  let admin = await prisma.user.findFirst({
+    where: { email: 'admin@skilllink.com' }
   });
-  console.log('✅ Created admin:', admin.email);
+  
+  if (!admin) {
+    admin = await prisma.user.create({
+      data: {
+        email: 'admin@skilllink.com',
+        password: adminPassword,
+        name: 'Super Admin',
+        role: UserRole.ADMIN
+      }
+    });
+    console.log('✅ Created admin:', admin.email);
+  } else {
+    console.log('ℹ️  Admin already exists:', admin.email);
+  }
 
   // Create Facilitator
   const facilitatorPassword = await bcrypt.hash('Facilitator123!', 12);
-  const facilitator = await prisma.user.upsert({
-    where: { email: 'facilitator@skilllink.com' },
-    update: {},
-    create: {
-      email: 'facilitator@skilllink.com',
-      password: facilitatorPassword,
-      name: 'John Facilitator',
-      role: UserRole.FACILITATOR,
-      accessCode: generateAccessCode()
-    }
+  let facilitator = await prisma.user.findFirst({
+    where: { email: 'facilitator@skilllink.com' }
   });
-  console.log('✅ Created facilitator:', facilitator.email, '| Access Code:', facilitator.accessCode);
+  
+  if (!facilitator) {
+    facilitator = await prisma.user.create({
+      data: {
+        email: 'facilitator@skilllink.com',
+        password: facilitatorPassword,
+        name: 'AbuDhabi Facilitator',
+        role: UserRole.FACILITATOR,
+        accessCode: generateAccessCode()
+      }
+    });
+    console.log('✅ Created facilitator:', facilitator.email, '| Access Code:', facilitator.accessCode);
+  } else {
+    console.log('ℹ️  Facilitator already exists:', facilitator.email);
+  }
 
   // Create Sample Cohort
-  const cohort = await prisma.cohort.create({
-    data: {
-      name: 'Full Stack Web Development - Cohort 1',
-      description: 'Learn modern web development with React, Node.js, and PostgreSQL',
-      startDate: new Date('2024-01-15'),
-      endDate: new Date('2024-06-15'),
-      createdById: admin.id,
-      studentInviteLink: generateInviteToken(),
-      facilitatorInviteLink: generateInviteToken()
-    }
+  let cohort = await prisma.cohort.findFirst({
+    where: { name: 'Full Stack Web Development - Cohort 1' }
   });
-  console.log('✅ Created cohort:', cohort.name);
-  console.log('   Student Invite:', cohort.studentInviteLink);
-  console.log('   Facilitator Invite:', cohort.facilitatorInviteLink);
+  
+  if (!cohort) {
+    cohort = await prisma.cohort.create({
+      data: {
+        name: 'Full Stack Web Development - Cohort 1',
+        description: 'Learn modern web development with React, Node.js, and PostgreSQL',
+        startDate: new Date('2024-01-15'),
+        endDate: new Date('2024-06-15'),
+        createdById: admin.id,
+        studentInviteLink: generateInviteToken(),
+        facilitatorInviteLink: generateInviteToken()
+      }
+    });
+    console.log('✅ Created cohort:', cohort.name);
+    console.log('   Student Invite:', cohort.studentInviteLink);
+    console.log('   Facilitator Invite:', cohort.facilitatorInviteLink);
+  } else {
+    console.log('ℹ️  Cohort already exists:', cohort.name);
+  }
 
   // Add facilitator to cohort
-  await prisma.cohortUser.create({
-    data: {
+  const existingMembership = await prisma.cohortUser.findFirst({
+    where: {
       cohortId: cohort.id,
-      userId: facilitator.id,
-      role: 'FACILITATOR'
+      userId: facilitator.id
     }
   });
+  
+  if (!existingMembership) {
+    await prisma.cohortUser.create({
+      data: {
+        cohortId: cohort.id,
+        userId: facilitator.id,
+        role: 'FACILITATOR'
+      }
+    });
+    console.log('✅ Added facilitator to cohort');
+  }
 
   // Create Badges
   const badges = [
@@ -124,11 +154,15 @@ async function main() {
   ];
 
   for (const badge of badges) {
-    await prisma.badge.upsert({
-      where: { type: badge.type as any },
-      update: {},
-      create: badge as any
+    const existing = await prisma.badge.findFirst({
+      where: { type: badge.type as any }
     });
+    
+    if (!existing) {
+      await prisma.badge.create({
+        data: badge as any
+      });
+    }
   }
   console.log('✅ Created badges');
 
