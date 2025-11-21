@@ -1,9 +1,4 @@
 import nodemailer from 'nodemailer';
-import sgMail from '@sendgrid/mail';
-
-if (process.env.SENDGRID_API_KEY) {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-}
 
 interface EmailOptions {
   to: string;
@@ -14,34 +9,36 @@ interface EmailOptions {
 
 export const sendEmail = async (options: EmailOptions) => {
   try {
-    if (process.env.SENDGRID_API_KEY) {
-      await sgMail.send({
-        to: options.to,
-        from: process.env.EMAIL_FROM || 'noreply@skilllink.com',
-        subject: options.subject,
-        html: options.html,
-        text: options.text
-      });
-    } else {
-      // Development: Use nodemailer with local SMTP
+    // Check if Gmail SMTP is configured
+    if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
       const transporter = nodemailer.createTransport({
-        host: 'localhost',
-        port: 1025,
-        ignoreTLS: true
+        service: 'gmail',
+        auth: {
+          user: process.env.GMAIL_USER,
+          pass: process.env.GMAIL_APP_PASSWORD
+        }
       });
 
       await transporter.sendMail({
-        from: process.env.EMAIL_FROM || 'noreply@skilllink.com',
+        from: `"SkillLink" <${process.env.GMAIL_USER}>`,
         to: options.to,
         subject: options.subject,
         html: options.html,
         text: options.text
       });
+
+      console.log(`✉️  Email sent to ${options.to} via Gmail`);
+    } else {
+      // Development mode: Log email instead of sending
+      console.log(`📧 [DEV MODE] Email would be sent to: ${options.to}`);
+      console.log(`   Subject: ${options.subject}`);
+      console.log(`   Content: ${options.text || options.html.substring(0, 100)}...`);
     }
-    
-    console.log(`✉️  Email sent to ${options.to}`);
   } catch (error) {
     console.error('❌ Email sending failed:', error);
-    throw error;
+    // Don't throw error in development - just log it
+    if (process.env.NODE_ENV === 'production') {
+      throw error;
+    }
   }
 };

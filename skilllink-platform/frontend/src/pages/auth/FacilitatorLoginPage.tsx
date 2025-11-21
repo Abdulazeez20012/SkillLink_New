@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Shield } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { authService } from '../../services/auth.service';
+import { useAuth } from '../../context/AuthContext';
 
 interface FacilitatorLoginForm {
   email: string;
@@ -14,6 +15,7 @@ interface FacilitatorLoginForm {
 
 export default function FacilitatorLoginPage() {
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const { register, handleSubmit, formState: { errors } } = useForm<FacilitatorLoginForm>();
 
@@ -21,6 +23,7 @@ export default function FacilitatorLoginPage() {
     setLoading(true);
     try {
       await authService.facilitatorLogin(data);
+      await refreshUser(); // Update auth context with user data
       toast.success('Login successful!');
       navigate('/facilitator');
     } catch (error: any) {

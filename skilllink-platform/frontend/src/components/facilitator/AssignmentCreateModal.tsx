@@ -1,59 +1,42 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Calendar, Users } from 'lucide-react';
+import { X, Calendar, Award, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { cohortService } from '../../services/cohort.service';
-import { adminService } from '../../services/admin.service';
+import { assignmentService } from '../../services/assignment.service';
 
-interface CohortFormData {
-  name: string;
+interface AssignmentFormData {
+  title: string;
   description: string;
-  startDate: string;
-  endDate: string;
-  facilitatorId: string;
+  dueDate: string;
+  maxPoints: number;
 }
 
-interface CohortCreationModalProps {
+interface AssignmentCreateModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  cohortId: string;
 }
 
-export default function CohortCreationModal({ isOpen, onClose, onSuccess }: CohortCreationModalProps) {
+export default function AssignmentCreateModal({ isOpen, onClose, onSuccess, cohortId }: AssignmentCreateModalProps) {
   const [loading, setLoading] = useState(false);
-  const [facilitators, setFacilitators] = useState<any[]>([]);
-  const [loadingFacilitators, setLoadingFacilitators] = useState(false);
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<CohortFormData>();
+  const { register, handleSubmit, formState: { errors }, reset } = useForm<AssignmentFormData>();
 
-  useEffect(() => {
-    if (isOpen) {
-      loadFacilitators();
-    }
-  }, [isOpen]);
-
-  const loadFacilitators = async () => {
-    setLoadingFacilitators(true);
-    try {
-      const data = await adminService.getFacilitators();
-      setFacilitators(data);
-    } catch (error) {
-      toast.error('Failed to load facilitators');
-    } finally {
-      setLoadingFacilitators(false);
-    }
-  };
-
-  const onSubmit = async (data: CohortFormData) => {
+  const onSubmit = async (data: AssignmentFormData) => {
     setLoading(true);
     try {
-      await cohortService.createCohort(data);
-      toast.success('Cohort created successfully!');
+      await assignmentService.createAssignment({
+        ...data,
+        cohortId,
+        maxPoints: Number(data.maxPoints)
+      });
+      toast.success('Assignment created successfully!');
       reset();
       onSuccess();
       onClose();
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Failed to create cohort');
+      toast.error(error.response?.data?.error || 'Failed to create assignment');
     } finally {
       setLoading(false);
     }
@@ -82,7 +65,7 @@ export default function CohortCreationModal({ isOpen, onClose, onSuccess }: Coho
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
-              <h2 className="text-2xl font-bold text-gray-900">Create New Cohort</h2>
+              <h2 className="text-2xl font-bold text-gray-900">Create Assignment</h2>
               <motion.button
                 whileHover={{ scale: 1.1, rotate: 90 }}
                 whileTap={{ scale: 0.9 }}
@@ -95,24 +78,27 @@ export default function CohortCreationModal({ isOpen, onClose, onSuccess }: Coho
 
             {/* Form */}
             <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-5 overflow-y-auto max-h-[calc(90vh-140px)]">
-              {/* Cohort Name */}
+              {/* Title */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Cohort Name <span className="text-brand-red">*</span>
+                  Assignment Title <span className="text-brand-red">*</span>
                 </label>
-                <input
-                  {...register('name', { required: 'Cohort name is required' })}
-                  type="text"
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red transition-all"
-                  placeholder="e.g., Full Stack Web Development"
-                />
-                {errors.name && (
+                <div className="relative">
+                  <input
+                    {...register('title', { required: 'Title is required' })}
+                    type="text"
+                    className="w-full px-4 py-3 pl-11 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red transition-all"
+                    placeholder="e.g., Build a REST API"
+                  />
+                  <FileText size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                </div>
+                {errors.title && (
                   <motion.p
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="text-red-500 text-sm mt-1.5"
                   >
-                    {errors.name.message}
+                    {errors.title.message}
                   </motion.p>
                 )}
               </div>
@@ -124,9 +110,9 @@ export default function CohortCreationModal({ isOpen, onClose, onSuccess }: Coho
                 </label>
                 <textarea
                   {...register('description', { required: 'Description is required' })}
-                  rows={4}
+                  rows={5}
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red transition-all resize-none"
-                  placeholder="Describe the cohort, learning objectives, and expectations..."
+                  placeholder="Describe the assignment requirements, objectives, and deliverables..."
                 />
                 {errors.description && (
                   <motion.p
@@ -139,91 +125,55 @@ export default function CohortCreationModal({ isOpen, onClose, onSuccess }: Coho
                 )}
               </div>
 
-              {/* Assign Facilitator */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Assign Facilitator <span className="text-brand-red">*</span>
-                </label>
-                <div className="relative">
-                  <select
-                    {...register('facilitatorId', { required: 'Please select a facilitator' })}
-                    className="w-full px-4 py-3 pl-11 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red transition-all appearance-none bg-white"
-                    disabled={loadingFacilitators}
-                  >
-                    <option value="">
-                      {loadingFacilitators ? 'Loading facilitators...' : 'Select a facilitator'}
-                    </option>
-                    {facilitators.map((facilitator) => (
-                      <option key={facilitator.id} value={facilitator.id}>
-                        {facilitator.name} ({facilitator.email})
-                      </option>
-                    ))}
-                  </select>
-                  <Users size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                  <svg className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-                {errors.facilitatorId && (
-                  <motion.p
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-red-500 text-sm mt-1.5"
-                  >
-                    {errors.facilitatorId.message}
-                  </motion.p>
-                )}
-                {facilitators.length === 0 && !loadingFacilitators && (
-                  <p className="text-amber-600 text-sm mt-1.5">
-                    ⚠️ No facilitators available. Please create a facilitator first.
-                  </p>
-                )}
-              </div>
-
-              {/* Date Range */}
+              {/* Due Date and Max Points */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Start Date <span className="text-brand-red">*</span>
+                    Due Date <span className="text-brand-red">*</span>
                   </label>
                   <div className="relative">
                     <input
-                      {...register('startDate', { required: 'Start date is required' })}
-                      type="date"
+                      {...register('dueDate', { required: 'Due date is required' })}
+                      type="datetime-local"
                       className="w-full px-4 py-3 pl-11 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red transition-all"
                     />
                     <Calendar size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                   </div>
-                  {errors.startDate && (
+                  {errors.dueDate && (
                     <motion.p
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       className="text-red-500 text-sm mt-1.5"
                     >
-                      {errors.startDate.message}
+                      {errors.dueDate.message}
                     </motion.p>
                   )}
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    End Date <span className="text-brand-red">*</span>
+                    Max Points <span className="text-brand-red">*</span>
                   </label>
                   <div className="relative">
                     <input
-                      {...register('endDate', { required: 'End date is required' })}
-                      type="date"
+                      {...register('maxPoints', { 
+                        required: 'Max points is required',
+                        min: { value: 1, message: 'Must be at least 1' },
+                        max: { value: 1000, message: 'Cannot exceed 1000' }
+                      })}
+                      type="number"
                       className="w-full px-4 py-3 pl-11 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red transition-all"
+                      placeholder="100"
                     />
-                    <Calendar size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                    <Award size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                   </div>
-                  {errors.endDate && (
+                  {errors.maxPoints && (
                     <motion.p
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       className="text-red-500 text-sm mt-1.5"
                     >
-                      {errors.endDate.message}
+                      {errors.maxPoints.message}
                     </motion.p>
                   )}
                 </div>
@@ -259,7 +209,7 @@ export default function CohortCreationModal({ isOpen, onClose, onSuccess }: Coho
                     Creating...
                   </span>
                 ) : (
-                  'Create Cohort'
+                  'Create Assignment'
                 )}
               </motion.button>
             </div>

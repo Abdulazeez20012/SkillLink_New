@@ -41,8 +41,8 @@ function AppRoutes() {
       <Route path="/login" element={!user ? <LoginPage /> : <Navigate to={getDashboardRoute()} />} />
       <Route path="/admin/register" element={!user ? <AdminRegisterPage /> : <Navigate to={getDashboardRoute()} />} />
       <Route path="/facilitator/login" element={!user ? <FacilitatorLoginPage /> : <Navigate to={getDashboardRoute()} />} />
-      <Route path="/register/student" element={!user ? <StudentRegisterPage /> : <Navigate to={getDashboardRoute()} />} />
-      <Route path="/student/register/:token" element={!user ? <StudentRegisterPage /> : <Navigate to={getDashboardRoute()} />} />
+      <Route path="/register/student" element={<StudentRegisterPage />} />
+      <Route path="/register/student/:token" element={<StudentRegisterPage />} />
       
       <Route
         path="/admin/*"

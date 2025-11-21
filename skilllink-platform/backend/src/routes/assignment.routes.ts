@@ -13,11 +13,19 @@ router.post(
   '/',
   authorize(UserRole.ADMIN, UserRole.FACILITATOR),
   [
-    body('title').trim().notEmpty(),
-    body('description').trim().notEmpty(),
-    body('dueDate').isISO8601(),
-    body('cohortId').isUUID(),
-    body('maxScore').isInt({ min: 1 }),
+    body('title').trim().notEmpty().withMessage('Title is required'),
+    body('description').trim().notEmpty().withMessage('Description is required'),
+    body('dueDate').isISO8601().withMessage('Valid due date is required'),
+    body('cohortId').isUUID().withMessage('Valid cohort ID is required'),
+    // Accept both maxPoints and maxScore - at least one must be provided
+    body('maxPoints')
+      .if(body('maxScore').not().exists())
+      .isInt({ min: 1 })
+      .withMessage('Max points must be at least 1'),
+    body('maxScore')
+      .if(body('maxPoints').not().exists())
+      .isInt({ min: 1 })
+      .withMessage('Max score must be at least 1'),
     validate
   ],
   assignmentController.createAssignment

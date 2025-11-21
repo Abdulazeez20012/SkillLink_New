@@ -14,7 +14,7 @@ const programs = [
     title: 'SkillLink Labs',
     description: 'Experiment with cutting-edge AI tools and technologies in our interactive learning environment.',
     icon: FaRobot,
-    image: 'https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?w=800&h=500&fit=crop&q=80',
+    image: 'https://res.cloudinary.com/dwiewdn6f/image/upload/v1763571839/woman_wcejjk.png',
     alt: 'Person in video call with multiple participants on screen',
   },
   {

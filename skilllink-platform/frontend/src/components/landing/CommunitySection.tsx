@@ -32,7 +32,7 @@ const CommunitySection: React.FC = () => {
           <div className="grid md:grid-cols-2 gap-10 items-center">
             <motion.div variants={itemVariants} className="order-2 md:order-1">
               <img
-                src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&h=600&fit=crop&q=80"
+                src="https://res.cloudinary.com/dwiewdn6f/image/upload/v1763573736/bim_wvng5q.jpg"
                 alt="Community"
                 className="rounded-2xl shadow-lg"
               />

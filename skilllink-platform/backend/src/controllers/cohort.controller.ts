@@ -5,8 +5,10 @@ import { AppError } from '../middleware/error.middleware';
 import { generateInviteToken } from '../utils/generateCode';
 
 export const createCohort = async (req: AuthRequest, res: Response) => {
-  const { name, description, startDate, endDate } = req.body;
-  const createdById = req.user!.userId;
+  const { name, description, startDate, endDate, facilitatorId } = req.body;
+  
+  // Use facilitatorId if provided (admin creating cohort), otherwise use logged-in user (facilitator creating own cohort)
+  const createdById = facilitatorId || req.user!.userId;
 
   const cohort = await prisma.cohort.create({
     data: {

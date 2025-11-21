@@ -4,25 +4,54 @@ import { AuthRequest } from '../middleware/auth.middleware';
 import { AppError } from '../middleware/error.middleware';
 
 export const createAssignment = async (req: AuthRequest, res: Response) => {
-  const { title, description, dueDate, cohortId, maxScore } = req.body;
-  const createdById = req.user!.userId;
+  try {
+    const { title, description, dueDate, cohortId, maxPoints, maxScore } = req.body;
+    const createdById = req.user!.userId;
 
-  const assignment = await prisma.assignment.create({
-    data: {
+    // Debug logging
+    console.log('Creating assignment with data:', {
       title,
       description,
-      dueDate: new Date(dueDate),
+      dueDate,
       cohortId,
+      maxPoints,
       maxScore,
       createdById
-    },
-    include: {
-      cohort: { select: { id: true, name: true } },
-      createdBy: { select: { id: true, name: true } }
-    }
-  });
+    });
 
-  res.status(201).json({ success: true, data: assignment });
+    // Validate required fields
+    if (!title || !description || !dueDate || !cohortId) {
+      throw new AppError('Missing required fields', 400);
+    }
+
+    // Accept both maxPoints (frontend) and maxScore (database field)
+    const points = maxPoints || maxScore;
+
+    if (!points || points <= 0) {
+      throw new AppError('Max points must be greater than 0', 400);
+    }
+
+    const assignment = await prisma.assignment.create({
+      data: {
+        title,
+        description,
+        dueDate: new Date(dueDate),
+        cohortId,
+        maxScore: Number(points),
+        createdById
+      },
+      include: {
+        cohort: { select: { id: true, name: true } },
+        createdBy: { select: { id: true, name: true } }
+      }
+    });
+
+    console.log('Assignment created successfully:', assignment.id);
+    res.status(201).json({ success: true, data: assignment });
+  } catch (error) {
+    console.error('Error creating assignment:', error);
+    throw error;
+  }
 };
 
 export const getAssignments = async (req: AuthRequest, res: Response) => {

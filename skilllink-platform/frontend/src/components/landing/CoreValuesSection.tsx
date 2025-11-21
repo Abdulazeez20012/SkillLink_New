@@ -3,12 +3,11 @@ import { motion } from 'framer-motion';
 
 const coreValues = [
   'INNOVATION',
-  'EXCELLENCE',
-  'COLLABORATION',
+  'UBUNTU',
+  'LEARNING',
   'INTEGRITY',
-  'EMPOWERMENT',
-  'GROWTH',
-  'COMMUNITY'
+  'FULFILMENT',
+  'IMPACT'
 ];
 
 const CoreValuesSection: React.FC = () => {
