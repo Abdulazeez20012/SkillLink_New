@@ -40,5 +40,10 @@ export const cohortService = {
   async removeMember(cohortId: string, userId: string) {
     const response = await api.delete(`/cohorts/${cohortId}/members/${userId}`);
     return response.data;
+  },
+
+  async getMyCohorts() {
+    const response = await api.get('/cohorts/my-cohorts');
+    return response.data.data;
   }
 };

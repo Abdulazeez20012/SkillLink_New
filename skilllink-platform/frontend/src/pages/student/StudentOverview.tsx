@@ -409,7 +409,7 @@ export default function StudentOverview() {
         <div className="p-6">
           <LeaderboardTable 
             entries={leaderboard || []}
-            currentUserId={user?.userId}
+            currentUserId={user?.id}
           />
         </div>
       </motion.div>

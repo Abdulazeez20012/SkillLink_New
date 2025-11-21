@@ -11,7 +11,9 @@ import {
   X,
   Bell,
   Settings,
-  User
+  User,
+  Calendar,
+  MessageSquare
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { UserRole } from '../../types';
@@ -57,7 +59,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       return [
         { path: '/student', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
         { path: '/student/assignments', label: 'Assignments', icon: <BookOpen size={20} /> },
-        { path: '/student/progress', label: 'Progress', icon: <GraduationCap size={20} /> }
+        { path: '/student/progress', label: 'Progress', icon: <GraduationCap size={20} /> },
+        { path: '/student/attendance', label: 'Attendance', icon: <Calendar size={20} /> },
+        { path: '/student/forum', label: 'Forum', icon: <MessageSquare size={20} /> }
       ];
     }
     return [];

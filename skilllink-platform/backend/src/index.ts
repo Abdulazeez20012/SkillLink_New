@@ -6,23 +6,18 @@ import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import { createServer } from 'http';
-import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import routes from './routes';
 import { errorHandler } from './middleware/error.middleware';
+import { websocketService } from './services/websocket.service';
 
 dotenv.config();
 
 const app = express();
 const httpServer = createServer(app);
 
-// Socket.IO setup
-const io = new Server(httpServer, {
-  cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
-    credentials: true
-  }
-});
+// Initialize WebSocket
+websocketService.initialize(httpServer);
 
 // Security middleware
 app.use(helmet());
@@ -57,10 +52,15 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 
+// Import reminder service
+import reminderService from './services/reminder.service';
+
 httpServer.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV}`);
   console.log(`🔗 API: http://localhost:${PORT}/api`);
+  console.log(`🔌 WebSocket ready`);
+  
+  // Start assignment reminder service
+  reminderService.startReminderCron();
 });
-
-export { io };

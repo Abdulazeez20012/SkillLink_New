@@ -2,6 +2,11 @@ import { Response } from 'express';
 import prisma from '../config/database';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { AppError } from '../middleware/error.middleware';
+import { GamificationService } from '../services/gamification.service';
+import { NotificationService } from '../services/notification.service';
+
+const gamificationService = new GamificationService();
+const notificationService = new NotificationService();
 
 export const createAssignment = async (req: AuthRequest, res: Response) => {
   try {
@@ -153,10 +158,21 @@ export const gradeSubmission = async (req: AuthRequest, res: Response) => {
       gradedAt: new Date()
     },
     include: {
-      assignment: { select: { id: true, title: true } },
+      assignment: { select: { id: true, title: true, maxScore: true } },
       user: { select: { id: true, name: true, email: true } }
     }
   });
+
+  // Trigger gamification points for graded assignment
+  await gamificationService.handleAssignmentSubmission(
+    submission.userId,
+    submission.assignmentId,
+    grade,
+    submission.assignment.maxScore
+  );
+
+  // Send notification
+  await notificationService.notifyAssignmentGraded(submissionId);
 
   res.json({ success: true, data: submission });
 };

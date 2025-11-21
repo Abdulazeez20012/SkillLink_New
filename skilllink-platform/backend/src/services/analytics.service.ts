@@ -255,4 +255,115 @@ export class AnalyticsService {
       }
     });
   }
+
+  generateCSV(data: any): string {
+    const lines: string[] = [];
+    
+    // Header
+    lines.push('Cohort Analytics Report');
+    lines.push(`Cohort: ${data.cohort.name}`);
+    lines.push(`Generated: ${new Date().toISOString()}`);
+    lines.push('');
+    
+    // Grade Distribution
+    lines.push('Grade Distribution');
+    lines.push('Grade,Count,Percentage');
+    const totalGrades = Object.values(data.gradeDistribution).reduce((a: any, b: any) => a + b, 0) as number;
+    Object.entries(data.gradeDistribution).forEach(([grade, count]) => {
+      const percentage = totalGrades > 0 ? ((count as number) / totalGrades) * 100 : 0;
+      lines.push(`${grade},${count},${percentage.toFixed(2)}%`);
+    });
+    lines.push('');
+    
+    // Assignment Submission Rates
+    lines.push('Assignment Submission Rates');
+    lines.push('Assignment,Total Students,Submissions,Rate');
+    data.submissionStats.forEach((stat: any) => {
+      lines.push(`"${stat.title}",${stat.totalStudents},${stat.submissions},${stat.rate.toFixed(2)}%`);
+    });
+    lines.push('');
+    
+    // Attendance Stats
+    lines.push('Attendance Statistics');
+    lines.push('Status,Count');
+    data.attendanceStats.forEach((stat: any) => {
+      lines.push(`${stat.status},${stat._count}`);
+    });
+    lines.push('');
+    
+    // At-Risk Students
+    if (data.atRiskStudents.length > 0) {
+      lines.push('At-Risk Students');
+      lines.push('Student ID,Avg Grade,Submission Rate,Attendance Count');
+      data.atRiskStudents.forEach((student: any) => {
+        lines.push(`${student.studentId},${student.avgGrade.toFixed(2)}%,${student.submissionRate.toFixed(2)}%,${student.attendanceCount}`);
+      });
+    }
+    
+    return lines.join('\n');
+  }
+
+  generateTextReport(data: any): string {
+    const lines: string[] = [];
+    
+    lines.push('='.repeat(60));
+    lines.push('COHORT ANALYTICS REPORT');
+    lines.push('='.repeat(60));
+    lines.push('');
+    lines.push(`Cohort: ${data.cohort.name}`);
+    lines.push(`Generated: ${new Date().toLocaleString()}`);
+    lines.push('');
+    
+    // Grade Distribution
+    lines.push('-'.repeat(60));
+    lines.push('GRADE DISTRIBUTION');
+    lines.push('-'.repeat(60));
+    const totalGrades = Object.values(data.gradeDistribution).reduce((a: any, b: any) => a + b, 0) as number;
+    Object.entries(data.gradeDistribution).forEach(([grade, count]) => {
+      const percentage = totalGrades > 0 ? ((count as number) / totalGrades) * 100 : 0;
+      lines.push(`Grade ${grade}: ${count} students (${percentage.toFixed(1)}%)`);
+    });
+    lines.push('');
+    
+    // Assignment Submission Rates
+    lines.push('-'.repeat(60));
+    lines.push('ASSIGNMENT SUBMISSION RATES');
+    lines.push('-'.repeat(60));
+    data.submissionStats.forEach((stat: any) => {
+      lines.push(`${stat.title}`);
+      lines.push(`  Submissions: ${stat.submissions}/${stat.totalStudents} (${stat.rate.toFixed(1)}%)`);
+    });
+    lines.push('');
+    
+    // Attendance Stats
+    lines.push('-'.repeat(60));
+    lines.push('ATTENDANCE STATISTICS');
+    lines.push('-'.repeat(60));
+    data.attendanceStats.forEach((stat: any) => {
+      lines.push(`${stat.status}: ${stat._count}`);
+    });
+    lines.push('');
+    
+    // At-Risk Students
+    if (data.atRiskStudents.length > 0) {
+      lines.push('-'.repeat(60));
+      lines.push('AT-RISK STUDENTS');
+      lines.push('-'.repeat(60));
+      lines.push(`${data.atRiskStudents.length} students need attention`);
+      lines.push('');
+      data.atRiskStudents.forEach((student: any, index: number) => {
+        lines.push(`${index + 1}. Student ID: ${student.studentId}`);
+        lines.push(`   Average Grade: ${student.avgGrade.toFixed(1)}%`);
+        lines.push(`   Submission Rate: ${student.submissionRate.toFixed(1)}%`);
+        lines.push(`   Attendance: ${student.attendanceCount} days`);
+        lines.push('');
+      });
+    }
+    
+    lines.push('='.repeat(60));
+    lines.push('END OF REPORT');
+    lines.push('='.repeat(60));
+    
+    return lines.join('\n');
+  }
 }

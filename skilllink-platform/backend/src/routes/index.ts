@@ -10,6 +10,9 @@ import gamificationRoutes from './gamification.routes';
 import analyticsRoutes from './analytics.routes';
 import aiRoutes from './ai.routes';
 import githubRoutes from './github.routes';
+import announcementRoutes from './announcement.routes';
+import notificationRoutes from './notification.routes';
+import messageRoutes from './message.routes';
 
 const router = Router();
 
@@ -24,6 +27,9 @@ router.use('/gamification', gamificationRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/ai', aiRoutes);
 router.use('/github', githubRoutes);
+router.use('/announcements', announcementRoutes);
+router.use('/notifications', notificationRoutes);
+router.use('/messages', messageRoutes);
 
 router.get('/health', (req, res) => {
   res.json({

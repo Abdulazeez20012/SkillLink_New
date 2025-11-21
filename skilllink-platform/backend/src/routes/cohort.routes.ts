@@ -23,6 +23,7 @@ router.post(
 );
 
 router.get('/', cohortController.getCohorts);
+router.get('/my-cohorts', cohortController.getMyCohorts);
 router.get('/:id', cohortController.getCohortById);
 
 router.put(

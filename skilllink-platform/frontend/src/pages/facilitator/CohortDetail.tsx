@@ -3,26 +3,28 @@ import { useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, FileText, MessageSquare, Calendar, BarChart, Plus, 
-  Clock, CheckCircle, TrendingUp, Award, Target, Mail
+  Clock, TrendingUp, Award, Target, Mail, UserCheck
 } from 'lucide-react';
 import { useQuery } from '../../hooks/useQuery';
 import { facilitatorService } from '../../services/facilitator.service';
 import { assignmentService } from '../../services/assignment.service';
 import CohortAnalytics from '../../components/analytics/CohortAnalytics';
 import AssignmentCreateModal from '../../components/facilitator/AssignmentCreateModal';
+import MarkAttendanceModal from '../../components/facilitator/MarkAttendanceModal';
 import { formatDistanceToNow, format } from 'date-fns';
 
 type TabType = 'overview' | 'assignments' | 'analytics';
 
 export default function CohortDetail() {
   const { id } = useParams<{ id: string }>();
-  const { data: cohort, loading } = useQuery(() => facilitatorService.getCohortOverview(id!), [id]);
+  const { data: cohort, loading, refetch: refetchCohort } = useQuery(() => facilitatorService.getCohortOverview(id!), [id]);
   const { data: assignments, loading: assignmentsLoading, refetch: refetchAssignments } = useQuery(
     () => assignmentService.getCohortAssignments(id!), 
     [id]
   );
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showAttendanceModal, setShowAttendanceModal] = useState(false);
 
   if (loading) {
     return (
@@ -128,8 +130,17 @@ export default function CohortDetail() {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.4 }}
-              className="flex items-center gap-2"
+              className="flex items-center gap-3"
             >
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowAttendanceModal(true)}
+                className="flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white rounded-xl font-medium border border-white/20 transition-all"
+              >
+                <UserCheck size={18} />
+                <span>Mark Attendance</span>
+              </motion.button>
               <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
                 cohort?.isActive 
                   ? 'bg-green-500/20 text-green-100 border border-green-400/30' 
@@ -500,6 +511,16 @@ export default function CohortDetail() {
           setActiveTab('assignments');
         }}
         cohortId={id!}
+      />
+
+      {/* Mark Attendance Modal */}
+      <MarkAttendanceModal
+        isOpen={showAttendanceModal}
+        onClose={() => setShowAttendanceModal(false)}
+        onSuccess={() => {
+          refetchCohort();
+        }}
+        cohort={cohort}
       />
     </div>
   );

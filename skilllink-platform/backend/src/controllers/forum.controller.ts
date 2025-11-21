@@ -2,6 +2,11 @@ import { Response } from 'express';
 import prisma from '../config/database';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { AppError } from '../middleware/error.middleware';
+import { GamificationService } from '../services/gamification.service';
+import { NotificationService } from '../services/notification.service';
+
+const gamificationService = new GamificationService();
+const notificationService = new NotificationService();
 
 export const createPost = async (req: AuthRequest, res: Response) => {
   const { title, content, cohortId, tags } = req.body;
@@ -20,6 +25,9 @@ export const createPost = async (req: AuthRequest, res: Response) => {
       cohort: { select: { id: true, name: true } }
     }
   });
+
+  // Trigger gamification points for forum post
+  await gamificationService.handleForumPost(userId);
 
   res.status(201).json({ success: true, data: post });
 };
@@ -84,6 +92,12 @@ export const createAnswer = async (req: AuthRequest, res: Response) => {
     }
   });
 
+  // Trigger gamification points for forum answer
+  await gamificationService.handleForumAnswer(userId);
+
+  // Send notification to post author
+  await notificationService.notifyForumAnswer(answer.id);
+
   res.status(201).json({ success: true, data: answer });
 };
 
@@ -92,8 +106,12 @@ export const markAsSolved = async (req: AuthRequest, res: Response) => {
 
   const post = await prisma.forumPost.update({
     where: { id },
-    data: { solved: true }
+    data: { solved: true },
+    include: { user: true }
   });
+
+  // Award points to post author for getting their question solved
+  await gamificationService.handleForumSolved(post.userId);
 
   res.json({ success: true, data: post });
 };
@@ -103,8 +121,12 @@ export const endorseAnswer = async (req: AuthRequest, res: Response) => {
 
   const answer = await prisma.forumAnswer.update({
     where: { id },
-    data: { endorsements: { increment: 1 } }
+    data: { endorsements: { increment: 1 } },
+    include: { user: true }
   });
+
+  // Award points to answer author for endorsement
+  await gamificationService.handleForumEndorsement(answer.userId);
 
   res.json({ success: true, data: answer });
 };

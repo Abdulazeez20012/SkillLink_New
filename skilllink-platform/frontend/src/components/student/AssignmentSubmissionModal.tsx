@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, FileText, Github, Link as LinkIcon } from 'lucide-react';
+import { X, Send, FileText, Github, Link as LinkIcon, Upload, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { assignmentService } from '../../services/assignment.service';
 
@@ -19,23 +19,77 @@ interface AssignmentSubmissionModalProps {
 
 export default function AssignmentSubmissionModal({ isOpen, onClose, onSuccess, assignment }: AssignmentSubmissionModalProps) {
   const [loading, setLoading] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
   const { register, handleSubmit, formState: { errors }, reset } = useForm<SubmissionFormData>();
+
+  const uploadToCloudinary = async (file: File): Promise<string> => {
+    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'dwiewdn6f';
+    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'skilllink';
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', uploadPreset);
+    
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${cloudName}/upload`,
+      { method: 'POST', body: formData }
+    );
+    
+    if (!response.ok) {
+      throw new Error('File upload failed');
+    }
+    
+    const data = await response.json();
+    return data.secure_url;
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(e.target.files || []);
+    const validFiles = selectedFiles.filter(file => file.size <= 10 * 1024 * 1024); // 10MB limit
+    
+    if (validFiles.length !== selectedFiles.length) {
+      toast.error('Some files exceed 10MB limit and were not added');
+    }
+    
+    setFiles(prev => [...prev, ...validFiles]);
+  };
+
+  const removeFile = (index: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
+  };
 
   const onSubmit = async (data: SubmissionFormData) => {
     setLoading(true);
+    setUploading(true);
+    
     try {
+      // Upload files to Cloudinary
+      let fileUrls: string[] = [];
+      if (files.length > 0) {
+        toast.loading('Uploading files...');
+        fileUrls = await Promise.all(files.map(file => uploadToCloudinary(file)));
+        toast.dismiss();
+        toast.success('Files uploaded successfully!');
+      }
+
+      // Submit assignment
       await assignmentService.submitAssignment(assignment.id, {
         content: data.content,
-        githubUrl: data.githubUrl || undefined
+        githubUrl: data.githubUrl || undefined,
+        attachmentUrl: fileUrls.length > 0 ? fileUrls.join(',') : undefined
       });
+      
       toast.success('Assignment submitted successfully!');
       reset();
+      setFiles([]);
       onSuccess();
       onClose();
     } catch (error: any) {
       toast.error(error.response?.data?.error || 'Failed to submit assignment');
     } finally {
       setLoading(false);
+      setUploading(false);
     }
   };
 
@@ -137,6 +191,62 @@ export default function AssignmentSubmissionModal({ isOpen, onClose, onSuccess, 
                 <p className="text-xs text-gray-500 mt-1.5">
                   If your assignment involves code, share your GitHub repository link
                 </p>
+              </div>
+
+              {/* File Upload */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Attachments <span className="text-gray-400 text-xs">(Optional)</span>
+                </label>
+                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-brand-red transition-colors">
+                  <input
+                    type="file"
+                    multiple
+                    onChange={handleFileChange}
+                    className="hidden"
+                    id="file-upload"
+                    accept=".pdf,.doc,.docx,.zip,.jpg,.jpeg,.png,.txt"
+                  />
+                  <label
+                    htmlFor="file-upload"
+                    className="cursor-pointer flex flex-col items-center"
+                  >
+                    <Upload size={32} className="text-gray-400 mb-2" />
+                    <span className="text-sm font-medium text-gray-700">
+                      Click to upload files
+                    </span>
+                    <span className="text-xs text-gray-500 mt-1">
+                      PDF, DOC, ZIP, Images (Max 10MB each)
+                    </span>
+                  </label>
+                </div>
+
+                {/* File List */}
+                {files.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {files.map((file, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      >
+                        <div className="flex items-center gap-2">
+                          <FileText size={16} className="text-gray-400" />
+                          <span className="text-sm text-gray-700">{file.name}</span>
+                          <span className="text-xs text-gray-500">
+                            ({(file.size / 1024).toFixed(2)} KB)
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeFile(index)}
+                          className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Info Box */}

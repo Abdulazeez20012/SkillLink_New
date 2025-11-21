@@ -125,3 +125,23 @@ export const removeMember = async (req: AuthRequest, res: Response) => {
 
   res.json({ success: true, message: 'Member removed successfully' });
 };
+
+export const getMyCohorts = async (req: AuthRequest, res: Response) => {
+  const userId = req.user!.userId;
+
+  const cohortUsers = await prisma.cohortUser.findMany({
+    where: { userId },
+    include: {
+      cohort: {
+        include: {
+          createdBy: { select: { id: true, name: true, email: true } },
+          _count: { select: { members: true, assignments: true } }
+        }
+      }
+    }
+  });
+
+  const cohorts = cohortUsers.map(cu => cu.cohort);
+
+  res.json({ success: true, data: cohorts });
+};
