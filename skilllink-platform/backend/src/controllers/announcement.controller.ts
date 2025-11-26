@@ -101,3 +101,41 @@ export const deleteAnnouncement = async (req: AuthRequest, res: Response) => {
 
   res.json({ success: true, message: 'Announcement deleted successfully' });
 };
+
+export const bulkCreateAnnouncements = async (req: AuthRequest, res: Response) => {
+  const { announcements } = req.body; // Array of { title, content, priority, cohortId }
+  const createdById = req.user!.userId;
+
+  try {
+    const created = await Promise.all(
+      announcements.map(async (announcement: any) => {
+        const created = await prisma.announcement.create({
+          data: {
+            title: announcement.title,
+            content: announcement.content,
+            priority: announcement.priority || 'NORMAL',
+            cohortId: announcement.cohortId,
+            createdById
+          },
+          include: {
+            createdBy: { select: { id: true, name: true } },
+            cohort: { select: { id: true, name: true } }
+          }
+        });
+
+        // Send notifications
+        await notificationService.notifyAnnouncement(created.id);
+
+        return created;
+      })
+    );
+
+    res.status(201).json({ 
+      success: true, 
+      data: created,
+      message: `${created.length} announcements created successfully`
+    });
+  } catch (error: any) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};

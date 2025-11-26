@@ -45,9 +45,9 @@ model User {
   updatedAt     DateTime       @updatedAt
   
   // Relations
-  createdCohorts    Cohort[]         @relation("CohortCreator")
+  createdCohorts    Cohort[]              @relation("CohortCreator")
   cohortMemberships CohortUser[]
-  assignments       Assignment[]     @relation("AssignmentCreator")
+  assignments       Assignment[]          @relation("AssignmentCreator")
   submissions       Submission[]
   attendances       Attendance[]
   forumPosts        ForumPost[]
@@ -60,6 +60,11 @@ model User {
   activityLogs      ActivityLog[]
   certificates      Certificate[]
   resourceViews     ResourceView[]
+  officeHours       OfficeHours[]
+  officeHoursBookings OfficeHoursBooking[]
+  peerReviews       PeerReview[]          @relation("PeerReviewer")
+  sentMessages      Message[]             @relation("SentMessages")
+  receivedMessages  Message[]             @relation("ReceivedMessages")
   
   @@index([email])
   @@index([role])
@@ -87,6 +92,7 @@ model Cohort {
   forumPosts      ForumPost[]
   certificates    Certificate[]
   resources       Resource[]
+  officeHours     OfficeHours[]
   
   @@index([createdById])
   @@index([studentInviteLink])
@@ -117,6 +123,8 @@ model Assignment {
   maxScore           Int              @default(100)
   status             AssignmentStatus @default(DRAFT)
   allowResubmission  Boolean          @default(false)
+  peerReviewEnabled  Boolean          @default(false)
+  peerReviewCount    Int              @default(2)
   cohortId           String
   createdById        String
   createdAt          DateTime         @default(now())
@@ -126,6 +134,7 @@ model Assignment {
   cohort      Cohort           @relation(fields: [cohortId], references: [id], onDelete: Cascade)
   createdBy   User             @relation("AssignmentCreator", fields: [createdById], references: [id])
   submissions Submission[]
+  rubric      Rubric?
   
   @@index([cohortId])
   @@index([createdById])
@@ -133,20 +142,21 @@ model Assignment {
 }
 
 model Submission {
-  id           String    @id @default(uuid())
+  id           String       @id @default(uuid())
   assignmentId String
   userId       String
   githubUrl    String?
-  fileUrls     String[]  @default([])
+  fileUrls     String[]     @default([])
   notes        String?
   grade        Int?
   feedback     String?
-  submittedAt  DateTime  @default(now())
+  submittedAt  DateTime     @default(now())
   gradedAt     DateTime?
   
   // Relations
-  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignment   Assignment   @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  peerReviews  PeerReview[]
   
   @@index([assignmentId])
   @@index([userId])
@@ -370,4 +380,116 @@ model ResourceView {
   
   @@index([resourceId])
   @@index([userId])
+}
+
+
+// Rubrics
+model Rubric {
+  id           String           @id @default(uuid())
+  assignmentId String           @unique
+  name         String
+  description  String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  
+  assignment   Assignment       @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  criteria     RubricCriteria[]
+  
+  @@index([assignmentId])
+}
+
+model RubricCriteria {
+  id          String   @id @default(uuid())
+  rubricId    String
+  name        String
+  description String?
+  maxPoints   Int
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  rubric      Rubric   @relation(fields: [rubricId], references: [id], onDelete: Cascade)
+  
+  @@index([rubricId])
+}
+
+// Office Hours
+model OfficeHours {
+  id                String               @id @default(uuid())
+  facilitatorId     String
+  cohortId          String
+  title             String
+  description       String?
+  startTime         DateTime
+  endTime           DateTime
+  location          String?
+  meetingUrl        String?
+  maxAttendees      Int?
+  isRecurring       Boolean              @default(false)
+  recurrencePattern String?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  
+  facilitator       User                 @relation(fields: [facilitatorId], references: [id], onDelete: Cascade)
+  cohort            Cohort               @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+  bookings          OfficeHoursBooking[]
+  
+  @@index([facilitatorId])
+  @@index([cohortId])
+  @@index([startTime])
+}
+
+model OfficeHoursBooking {
+  id            String      @id @default(uuid())
+  officeHoursId String
+  studentId     String
+  notes         String?
+  status        String      @default("confirmed")
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  officeHours   OfficeHours @relation(fields: [officeHoursId], references: [id], onDelete: Cascade)
+  student       User        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  @@unique([officeHoursId, studentId])
+  @@index([officeHoursId])
+  @@index([studentId])
+}
+
+// Peer Review
+model PeerReview {
+  id           String     @id @default(uuid())
+  submissionId String
+  reviewerId   String
+  rating       Int?
+  feedback     String?
+  completedAt  DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  reviewer     User       @relation("PeerReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  
+  @@unique([submissionId, reviewerId])
+  @@index([submissionId])
+  @@index([reviewerId])
+}
+
+
+// Direct Messaging
+model Message {
+  id           String   @id @default(uuid())
+  senderId     String
+  receiverId   String
+  content      String
+  read         Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  sender       User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver     User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([createdAt])
 }

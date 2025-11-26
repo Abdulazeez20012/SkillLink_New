@@ -112,7 +112,7 @@ export default function AdminRegisterPage() {
                   {...register('name', { required: 'Name is required' })}
                   type="text"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-red focus:border-transparent"
-                  placeholder="John Doe"
+                  placeholder="Your name"
                 />
                 {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
               </div>

@@ -31,6 +31,9 @@ router.post(
   assignmentController.createAssignment
 );
 
+// Specific routes must come before parameterized routes
+router.get('/my-submissions', assignmentController.getMySubmissions);
+
 router.get('/', assignmentController.getAssignments);
 router.get('/:id', assignmentController.getAssignmentById);
 
@@ -54,7 +57,6 @@ router.put(
   assignmentController.gradeSubmission
 );
 
-router.get('/my-submissions', assignmentController.getMySubmissions);
 router.get('/:assignmentId/my-submission', assignmentController.getMySubmission);
 router.post('/:assignmentId/resubmit', assignmentController.resubmitAssignment);
 router.get('/:assignmentId/download', assignmentController.downloadSubmission);

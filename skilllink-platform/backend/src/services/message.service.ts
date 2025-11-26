@@ -1,6 +1,8 @@
 import prisma from '../config/database';
 import { websocketService } from './websocket.service';
 
+// Message service for direct messaging between users
+
 export class MessageService {
   async sendMessage(senderId: string, receiverId: string, content: string) {
     const message = await prisma.message.create({
@@ -46,7 +48,7 @@ export class MessageService {
     });
 
     const conversations = new Map();
-    messages.forEach(msg => {
+    messages.forEach((msg: any) => {
       const partnerId = msg.senderId === userId ? msg.receiverId : msg.senderId;
       if (!conversations.has(partnerId)) {
         conversations.set(partnerId, {

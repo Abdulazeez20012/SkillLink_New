@@ -35,4 +35,16 @@ router.delete(
   announcementController.deleteAnnouncement
 );
 
+router.post(
+  '/bulk',
+  authorize(UserRole.ADMIN, UserRole.FACILITATOR),
+  [
+    body('announcements').isArray().notEmpty(),
+    body('announcements.*.title').trim().notEmpty(),
+    body('announcements.*.content').trim().notEmpty(),
+    validate
+  ],
+  announcementController.bulkCreateAnnouncements
+);
+
 export default router;

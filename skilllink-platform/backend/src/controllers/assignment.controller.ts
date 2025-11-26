@@ -176,3 +176,111 @@ export const gradeSubmission = async (req: AuthRequest, res: Response) => {
 
   res.json({ success: true, data: submission });
 };
+
+export const getMySubmissions = async (req: AuthRequest, res: Response) => {
+  const userId = req.user!.userId;
+
+  const submissions = await prisma.submission.findMany({
+    where: { userId },
+    include: {
+      assignment: {
+        select: {
+          id: true,
+          title: true,
+          dueDate: true,
+          maxScore: true,
+          allowResubmission: true
+        }
+      }
+    },
+    orderBy: { submittedAt: 'desc' }
+  });
+
+  res.json({ success: true, data: submissions });
+};
+
+export const getMySubmission = async (req: AuthRequest, res: Response) => {
+  const userId = req.user!.userId;
+  const { assignmentId } = req.params;
+
+  const submission = await prisma.submission.findFirst({
+    where: { userId, assignmentId },
+    include: {
+      assignment: {
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          dueDate: true,
+          maxScore: true,
+          allowResubmission: true
+        }
+      }
+    },
+    orderBy: { submittedAt: 'desc' }
+  });
+
+  if (!submission) {
+    res.status(404).json({ success: false, error: 'Submission not found' });
+    return;
+  }
+
+  res.json({ success: true, data: submission });
+};
+
+export const resubmitAssignment = async (req: AuthRequest, res: Response) => {
+  const userId = req.user!.userId;
+  const { assignmentId } = req.params;
+  const { fileUrls, notes } = req.body;
+
+  // Check if assignment allows resubmission
+  const assignment = await prisma.assignment.findUnique({
+    where: { id: assignmentId },
+    select: { allowResubmission: true, dueDate: true }
+  });
+
+  if (!assignment) {
+    res.status(404).json({ success: false, error: 'Assignment not found' });
+    return;
+  }
+
+  if (!assignment.allowResubmission) {
+    res.status(400).json({ success: false, error: 'Resubmission not allowed for this assignment' });
+    return;
+  }
+
+  // Create new submission
+  const submission = await prisma.submission.create({
+    data: {
+      assignmentId,
+      userId,
+      fileUrls,
+      notes,
+      submittedAt: new Date()
+    },
+    include: {
+      assignment: { select: { id: true, title: true, maxScore: true } },
+      user: { select: { id: true, name: true, email: true } }
+    }
+  });
+
+  res.status(201).json({ success: true, data: submission });
+};
+
+export const downloadSubmission = async (req: AuthRequest, res: Response) => {
+  const userId = req.user!.userId;
+  const { assignmentId } = req.params;
+
+  const submission = await prisma.submission.findFirst({
+    where: { userId, assignmentId },
+    orderBy: { submittedAt: 'desc' }
+  });
+
+  if (!submission) {
+    res.status(404).json({ success: false, error: 'Submission not found' });
+    return;
+  }
+
+  // Return file URLs for download
+  res.json({ success: true, data: { files: submission.fileUrls } });
+};
